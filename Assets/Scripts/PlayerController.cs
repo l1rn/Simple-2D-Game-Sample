@@ -35,9 +35,9 @@ public class PlayerController : MonoBehaviour
     }
     void Update()
     {
+        CheckCeiling();
         CheckInputs();
         SetAnimation();
-        CheckCeiling();
     }
     void CheckInputs()
     {
@@ -48,10 +48,13 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            crouchPressed = false;
+            if (canStand)
+            {
+                crouchPressed = false;
+            }
         }
 
-        APressed = Input.GetKey(KeyCode.A);
+            APressed = Input.GetKey(KeyCode.A);
         DPressed = Input.GetKey(KeyCode.D);
     }
     void SetAnimation()
@@ -78,19 +81,23 @@ public class PlayerController : MonoBehaviour
             targetSpeed = runSpeed;
         }
 
-        if(!crouchPressed && canStand)
-        {
-            defaultCollider.enabled = true;
-            crouchCollider.enabled = false;
-        }
-
         if (crouchPressed)
         {
             defaultCollider.enabled = false;
             crouchCollider.enabled = true;
             targetSpeed = targetSpeed * 0.4f;
         }
-        
+        else if (canStand)
+        {
+            defaultCollider.enabled = true;
+            crouchCollider.enabled = false;
+        }
+
+        if (!crouchPressed && !canStand)
+        {
+            crouchPressed = true;
+        }
+
 
         body.linearVelocity = new Vector2(targetSpeed, body.linearVelocity.y);
 
@@ -108,13 +115,15 @@ public class PlayerController : MonoBehaviour
     {
         if (!crouchPressed)
         {
+            // Получаем границы коллайдера в мировых координатах
             Bounds colliderBounds = defaultCollider.bounds;
-            Vector2 checkStart = colliderBounds.center + Vector3.up * colliderBounds.extents.y;
-            Vector2 checkEnd = checkStart + Vector2.up * ceilingCheckHeight;
+            // Рассчитываем стартовую позицию проверки
+            Vector2 checkStart = colliderBounds.center + new Vector3(0, colliderBounds.extents.y, 0);
+            // Рассчитываем конечную позицию проверки
+            Vector2 checkEnd = checkStart + new Vector2(0, ceilingCheckHeight);
 
+            // Проверяем область и рисуем линию
             canStand = !Physics2D.OverlapArea(checkStart, checkEnd, obstacleLayer);
-
-            Debug.DrawLine(checkStart, checkEnd, canStand ? Color.green : Color.red);
         }
         else
         {
